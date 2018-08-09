@@ -32,4 +32,20 @@ package Test1 {
   );
 }
 
+package TestBools {
+  use DeploymentManagerDSL;
+
+  resource r1 => 'type1', {
+    bool_true => true,
+    bool_false => false,
+  };
+}
+
+{
+  my $t = TestBools->new;
+
+  like($t->jinja_content, qr/bool_true: true/);
+  like($t->jinja_content, qr/bool_false: false/);
+}
+
 done_testing;

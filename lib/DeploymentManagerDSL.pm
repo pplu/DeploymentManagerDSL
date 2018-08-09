@@ -72,9 +72,10 @@ package DeploymentManagerDSL {
   use Moose::Exporter;
   use Moose::Util::MetaRole ();
   use DeploymentManager;
+  use boolean ();
 
   Moose::Exporter->setup_import_methods(
-    with_meta => [qw/parameter resource output/],
+    with_meta => [qw/parameter resource output true false/],
     as_is => [qw//],
     also => 'Moose',
   );
@@ -85,6 +86,9 @@ package DeploymentManagerDSL {
 
     return Moose->init_meta(%args, base_class => 'DeploymentManagerDSL::Object');
   }
+
+  sub true { boolean::true }
+  sub false { boolean::false }
 
   sub parameter {
     my ($meta, $name, $type, $properties) = @_;
