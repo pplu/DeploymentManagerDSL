@@ -54,6 +54,12 @@ package DeploymentManagerDSL::Object {
             grep { $_->does('CCfnX::Meta::Attribute::Trait::DeploymentManagerResource') }
               $self->meta->get_all_attributes
       ],
+      outputs => [
+         map { $_->get_value($self) } 
+          sort { $a->name cmp $b->name } 
+            grep { $_->does('CCfnX::Meta::Attribute::Trait::DeploymentManagerOutput') }
+              $self->meta->get_all_attributes
+      ]
     );
   }
 
@@ -181,7 +187,22 @@ package DeploymentManagerDSL {
   }
 
   sub output {
+    my ($meta, $name, $value) = @_;
 
+    _die_if_already_declared_in_class($meta, $name);
+
+    my $r = DeploymentManager::Output->new(
+      name => $name,
+      value => $value,
+    );
+
+    _plant_attribute(
+      $meta,
+      $name,
+      'DeploymentManager::Output',
+      'CCfnX::Meta::Attribute::Trait::DeploymentManagerOutput',
+      sub { $r }
+    );
   }
 
   sub _plant_attribute {
@@ -213,6 +234,9 @@ package CCfnX::Meta::Attribute::Trait::DMDSLParameter {
   use Moose::Role;
 }
 package CCfnX::Meta::Attribute::Trait::DeploymentManagerResource {
+  use Moose::Role;
+}
+package CCfnX::Meta::Attribute::Trait::DeploymentManagerOutput {
   use Moose::Role;
 }
 package CCfnX::Meta::Attribute::Trait::DeploymentManagerParameter {
