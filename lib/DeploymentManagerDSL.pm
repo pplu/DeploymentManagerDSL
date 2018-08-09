@@ -8,6 +8,7 @@ package DeploymentManagerDSL::Object {
     builder => 'build_om',
     handles => {
       as_hashref => 'as_hashref',
+      num_of_properties => 'num_of_properties',
     }
   );
 

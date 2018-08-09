@@ -26,6 +26,7 @@ my $t = Test1->new;
 my $params = $t->params_class;
 
 {
+  cmp_ok($t->num_of_properties, '==', 1, 'One in_template parameter');
   ok($params->does('MooseX::Getopt'));
   can_ok($params, 'p1');
   can_ok($params, 'p2');
@@ -67,7 +68,9 @@ package TestParamTypes {
 
 
 {
-  my $p = TestParamTypes->new->params_class;
+  my $tc = TestParamTypes->new;
+  my $p = $tc->params_class;
+  cmp_ok($tc->num_of_properties, '==', 0, 'None of the params are declared in_template');
   throws_ok(sub {
     $p->new(i1 => 'illegalstringvalue');
   }, 'Moose::Exception::ValidationFailedForTypeConstraint');
