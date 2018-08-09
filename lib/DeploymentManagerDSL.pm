@@ -14,28 +14,79 @@ package DeploymentManagerDSL::Object {
     }
   );
 
+  has config_model => (
+    is => 'ro',
+    isa => 'DeploymentManager::Config',
+    lazy => 1,
+    builder => 'build_cm',
+  );
+
   # Return the name of the class
   sub type {
     my $self = shift;
     return $self->meta->name;
   }
 
-  has _temp_file => (is => 'ro', isa => 'Path::Tiny', lazy => 1, default => sub {
+  has _temp_jinja_file => (is => 'ro', isa => 'Path::Tiny', lazy => 1, default => sub {
     my $self = shift;
-    Path::Tiny->tempfile( TEMPLATE => 'deploymentmanager_dsl_XXXXXX', SUFFIX => '.jinja' );
+    Path::Tiny->tempfile( TEMPLATE => 'deploymentmanager_dsl_jinja_XXXXXX', SUFFIX => '.jinja' );
+  });
+  has _temp_config_file => (is => 'ro', isa => 'Path::Tiny', lazy => 1, default => sub {
+    my $self = shift;
+    Path::Tiny->tempfile( TEMPLATE => 'deploymentmanager_dsl_config_XXXXXX', SUFFIX => '.yaml' );
   });
 
   has jinja_content => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
     my $self = shift;
     return YAML::PP->new->dump_string($self->object_model->as_hashref);
   });
-
-  has file => (is => 'ro', isa => 'Str', lazy => 1, builder => 'build_file');
-
-  sub build_file {
+  has config_content => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
     my $self = shift;
-    $self->_temp_file->spew($self->jinja_content);
-    return $self->_temp_file->stringify;
+    return YAML::PP->new->dump_string($self->config_model->as_hashref);
+  });
+
+  has jinja_full_path => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
+    my $self = shift;
+    $self->_temp_jinja_file->spew($self->jinja_content);
+    return $self->_temp_jinja_file->stringify;
+  });
+  has jinja_path_relative => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
+    my $self = shift;
+    # Generate the jinja file too...
+    $self->jinja_full_path;
+    $self->_temp_jinja_file->relative($self->_temp_config_file->parent)->stringify;
+  });
+  has config_file_name => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
+    my $self = shift;
+    $self->_temp_config_file->spew($self->config_content);
+    return $self->_temp_config_file->stringify;
+  });
+ 
+  has property_values => (is => 'rw', isa => 'HashRef');
+
+  sub build_cm {
+    my $self = shift;
+
+    die "Can't generate a config yaml if property_values isn't set" if (not defined $self->property_values);
+
+    return DeploymentManager::Config->new(
+      imports => [ DeploymentManager::Import->new(path => $self->jinja_path_relative) ],
+      resources => [
+        DeploymentManager::Resource->new(
+          name => 'deployment',
+          type => $self->jinja_path_relative,
+          properties => $self->property_values,
+        ),
+      ],
+      outputs => [
+        map { 
+          DeploymentManager::Output->new(
+            name => $_->name,
+            value => $_->value,
+          );   
+        } @{ $self->object_model->outputs }
+      ],
+    );
   }
 
   sub build_om {

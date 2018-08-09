@@ -16,37 +16,36 @@ package Test1 {
   }, {
     dependsOn => [ 'r1' ],
   };
+
+  output o1 => '$(ref.r2.HisProp)';
 }
 
-my $expected_yaml = <<YAML;
----
-resources:
-- name: r1
-  properties:
-    prop1: r1prop1value
-  type: type1
-- metadata:
-    dependsOn:
-    - r1
-  name: r2
-  properties:
-    prop1: r2prop1value
-  type: type2
-YAML
-
 {
-  my $t = Test1->new;
+  my $t = Test1->new(
+    property_values => {},
+  );
 
-  my $file_content;
+  my $config_file_content;
   {
     local $/=undef;
-    open (my $file, '<', $t->file);
-    $file_content = <$file>;
+    open (my $file, '<', $t->config_file_name);
+    $config_file_content = <$file>;
     close $file;
   }
-  cmp_ok($t->jinja_content, 'eq', $expected_yaml);
-  like($t->file, qr|^/tmp|);
-  cmp_ok($file_content, 'eq', $t->jinja_content, 'The file was dumped into the file');
+  like($t->config_file_name, qr|^/tmp|);
+  like($t->config_file_name, qr|\.yaml$|);
+  cmp_ok($config_file_content, 'eq', $t->config_content, 'The file was dumped into the file');
+
+  my $jinja_file_content;
+  {
+    local $/=undef;
+    open (my $file, '<', $t->jinja_full_path);
+    $jinja_file_content = <$file>;
+    close $file;
+  }
+  like($t->jinja_full_path, qr|^/tmp|);
+  like($t->jinja_path_relative, qr|^\w+\.jinja|);
+  cmp_ok($jinja_file_content, 'eq', $t->jinja_content, 'The file was dumped into the file');
 }
 
 done_testing;
