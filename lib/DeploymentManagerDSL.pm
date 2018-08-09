@@ -1,5 +1,7 @@
 package DeploymentManagerDSL::Object {
   use Moose;
+  use Path::Tiny;
+  use YAML::PP;
 
   has object_model => (
     is => 'ro',
@@ -16,6 +18,24 @@ package DeploymentManagerDSL::Object {
   sub type {
     my $self = shift;
     return $self->meta->name;
+  }
+
+  has _temp_file => (is => 'ro', isa => 'Path::Tiny', lazy => 1, default => sub {
+    my $self = shift;
+    Path::Tiny->tempfile( TEMPLATE => 'deploymentmanager_dsl_XXXXXX', SUFFIX => '.jinja' );
+  });
+
+  has jinja_content => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
+    my $self = shift;
+    return YAML::PP->new->dump_string($self->object_model->as_hashref);
+  });
+
+  has file => (is => 'ro', isa => 'Str', lazy => 1, builder => 'build_file');
+
+  sub build_file {
+    my $self = shift;
+    $self->_temp_file->spew($self->jinja_content);
+    return $self->_temp_file->stringify;
   }
 
   sub build_om {
