@@ -85,8 +85,6 @@ package DeploymentManagerDSL::Object {
     );
     return $class_params_name;
   }
-
-  sub stub { 42 }
 }
 package DeploymentManagerDSL {
   use Moose ();
