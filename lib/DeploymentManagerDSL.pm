@@ -11,6 +11,12 @@ package DeploymentManagerDSL::Object {
     }
   );
 
+  # Return the name of the class
+  sub type {
+    my $self = shift;
+    return $self->meta->name;
+  }
+
   sub build_om {
     my $self = shift;
 
