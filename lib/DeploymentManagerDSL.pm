@@ -26,6 +26,44 @@ package DeploymentManagerDSL::Object {
     my $self = shift;
     return $self->object_model->as_hashref;
   }
+  sub params_class {
+    my $class = shift;
+    my $class_meta = $class->meta;
+    my $class_name = $class_meta->name;
+
+    my $class_params_name = "${class_name}AutoParameters";
+
+    my @param_list =
+      grep { $_->does('CCfnX::Meta::Attribute::Trait::DMDSLParameter') }
+      $class_meta->get_all_attributes;
+
+    my @param_attrs = map {
+      # Invoke the attributes default to get the DeploymentManager::Property object
+      my $dm_property = $_->default->();
+
+      my $attr = Moose::Meta::Attribute->new(
+        $_->name,
+        is  => 'ro',
+        isa => 'Str',
+        (defined $dm_property->default) ? (default => $dm_property->default) : (),
+        #($dm_property->required) ? (required => 1) : (),
+      );
+      # Apply StackParameter trait to the attribute dynamically
+      $_->does('CCfnX::Meta::Attribute::Trait::DeploymentManagerParameter')
+          ? Moose::Util::apply_all_roles($attr, 'CCfnX::Meta::Attribute::Trait::DeploymentManagerParameter')
+          : $attr;
+    } @param_list;
+
+    require MooseX::Getopt;
+
+    my $params_class = Moose::Meta::Class->create(
+      $class_params_name,
+      superclasses => ['Moose::Object'],
+      roles        => ['MooseX::Getopt'],
+      attributes   => [ @param_attrs ],
+    );
+    return $class_params_name;
+   }
 
   sub stub { 42 }
 }
@@ -49,7 +87,21 @@ package DeploymentManagerDSL {
   }
 
   sub parameter {
+    my ($meta, $name, $type, $properties) = @_;
+    $properties = {} if (not defined $properties);
 
+    my $r = DeploymentManager::Property->new(
+      type => 'string',
+    );
+
+    my $traits = [ 'CCfnX::Meta::Attribute::Trait::DMDSLParameter' ];
+    _plant_attribute(
+      $meta,
+      $name,
+      'DeploymentManager::Property',
+      $traits,
+      sub { $r }
+    );
   }
 
   sub resource {
@@ -102,7 +154,13 @@ package DeploymentManagerDSL {
     }
   }
 }
+package CCfnX::Meta::Attribute::Trait::DMDSLParameter {
+  use Moose::Role;
+}
 package CCfnX::Meta::Attribute::Trait::DeploymentManagerResource {
+  use Moose::Role;
+}
+package CCfnX::Meta::Attribute::Trait::DeploymentManagerParameter {
   use Moose::Role;
 }
 1;
