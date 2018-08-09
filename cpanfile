@@ -1,5 +1,6 @@
 requires 'Moose';
 requires 'MooseX::Getopt';
+requires 'Path::Tiny';
 requires 'boolean';
 
 on 'test' => sub {
