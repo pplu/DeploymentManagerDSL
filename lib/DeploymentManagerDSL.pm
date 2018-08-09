@@ -5,7 +5,10 @@ package DeploymentManagerDSL::Object {
     is => 'ro',
     isa => 'DeploymentManager::Template::Jinja',
     lazy => 1,
-    builder => 'build_om'
+    builder => 'build_om',
+    handles => {
+      as_hashref => 'as_hashref',
+    }
   );
 
   sub build_om {
@@ -27,10 +30,6 @@ package DeploymentManagerDSL::Object {
     );
   }
 
-  sub as_hashref {
-    my $self = shift;
-    return $self->object_model->as_hashref;
-  }
   our $moose_type_for = {
     string => 'Str',
     boolean => 'Bool',
@@ -78,7 +77,7 @@ package DeploymentManagerDSL::Object {
       attributes   => [ @param_attrs ],
     );
     return $class_params_name;
-   }
+  }
 
   sub stub { 42 }
 }
