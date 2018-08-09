@@ -31,6 +31,13 @@ package DeploymentManagerDSL::Object {
     my $self = shift;
     return $self->object_model->as_hashref;
   }
+  our $moose_type_for = {
+    string => 'Str',
+    boolean => 'Bool',
+    integer => 'Int',
+    number => 'Num',
+  };
+
   sub params_class {
     my $class = shift;
     my $class_meta = $class->meta;
@@ -46,10 +53,13 @@ package DeploymentManagerDSL::Object {
       # Invoke the attributes default to get the DeploymentManager::Property object
       my $dm_property = $_->default->();
 
+      my $moose_type = $moose_type_for->{ $dm_property->type };
+      die "Cannot convert to Moose type" if (not defined $moose_type);
+
       my $attr = Moose::Meta::Attribute->new(
         $_->name,
         is  => 'ro',
-        isa => 'Str',
+        isa => $moose_type,
         (defined $dm_property->default) ? (default => $dm_property->default) : (),
         ($_->does('CCfnX::Meta::Attribute::Trait::DMDSLRequired')) ? (required => 1) : (),
       );
@@ -100,7 +110,7 @@ package DeploymentManagerDSL {
     $properties = {} if (not defined $properties);
 
     my $r = DeploymentManager::Property->new(
-      type => 'string',
+      type => $type,
     );
 
     my $traits = [ 'CCfnX::Meta::Attribute::Trait::DMDSLParameter' ];

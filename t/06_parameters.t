@@ -17,12 +17,6 @@ package Test1 {
     in_template => 1,
   };
 
-  parameter i1 => 'integer';
-
-  parameter b1 => 'boolean';
-
-  parameter n1 => 'number';
-
   resource r1 => 'type1', {
     prop1 => 'r1prop1value',
   };
@@ -62,27 +56,41 @@ my $params = $t->params_class;
   cmp_ok($param_obj->p2, 'eq', 'value2');
 }
 
+package TestParamTypes {
+  use DeploymentManagerDSL;
+
+  parameter s2 => 'string';
+  parameter i1 => 'integer';
+  parameter b1 => 'boolean';
+  parameter n1 => 'number';
+}
+
+
 {
+  my $p = TestParamTypes->new->params_class;
   throws_ok(sub {
-    $params->new(i1 => 'illegalstringvalue');
+    $p->new(i1 => 'illegalstringvalue');
   }, 'Moose::Exception::ValidationFailedForTypeConstraint');
 }
 
 {
+  my $p = TestParamTypes->new->params_class;
   throws_ok(sub {
-    $params->new(i1 => 3.1415);
+    $p->new(i1 => 3.1415);
   }, 'Moose::Exception::ValidationFailedForTypeConstraint');
 }
 
 {
+  my $p = TestParamTypes->new->params_class;
   throws_ok(sub {
-    $params->new(n1 => 'illegalstringvalue');
+    $p->new(n1 => 'illegalstringvalue');
   }, 'Moose::Exception::ValidationFailedForTypeConstraint');
 }
 
 {
+  my $p = TestParamTypes->new->params_class;
   throws_ok(sub {
-    $params->new(b1 => 'illegalstringvalue');
+    $p->new(b1 => 'illegalstringvalue');
   }, 'Moose::Exception::ValidationFailedForTypeConstraint');
 }
 
