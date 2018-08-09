@@ -36,6 +36,16 @@ my $params = $t->params_class;
   can_ok($params, 'p1');
   can_ok($params, 'p2');
 
+  ok(
+    not($params->meta->get_attribute('p1')->does('CCfnX::Meta::Attribute::Trait::DeploymentManagerParameter')),
+    'p1 isn\'t marked for inclusion in the template'
+  );
+
+  ok(
+    $params->meta->get_attribute('p2')->does('CCfnX::Meta::Attribute::Trait::DeploymentManagerParameter'),
+    'p2 is marked for inclusion in the template'
+  );
+
   throws_ok(sub {
     # skip a required parameter
     $params->new(p1 => 'value');

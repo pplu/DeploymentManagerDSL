@@ -13,6 +13,11 @@ package DeploymentManagerDSL::Object {
 
     # gather all the resources and outputs to generate a Deployme
     return DeploymentManager::Template::Jinja->new(
+      properties => [
+        map { $_->name }
+          grep { $_->does('CCfnX::Meta::Attribute::Trait::DeploymentManagerParameter') }
+            $self->params_class->meta->get_all_attributes
+      ],
       resources => [
         map { $_->get_value($self) } 
           sort { $a->name cmp $b->name } 
@@ -46,7 +51,7 @@ package DeploymentManagerDSL::Object {
         is  => 'ro',
         isa => 'Str',
         (defined $dm_property->default) ? (default => $dm_property->default) : (),
-        #($dm_property->required) ? (required => 1) : (),
+        ($_->does('CCfnX::Meta::Attribute::Trait::DMDSLRequired')) ? (required => 1) : (),
       );
       # Apply StackParameter trait to the attribute dynamically
       $_->does('CCfnX::Meta::Attribute::Trait::DeploymentManagerParameter')
@@ -99,6 +104,12 @@ package DeploymentManagerDSL {
     );
 
     my $traits = [ 'CCfnX::Meta::Attribute::Trait::DMDSLParameter' ];
+    if (defined $properties->{ in_template } and $properties->{ in_template } == 1) {
+      push @$traits, 'CCfnX::Meta::Attribute::Trait::DeploymentManagerParameter';
+    }
+    if (defined $properties->{ required } and $properties->{ required } == 1) {
+      push @$traits, 'CCfnX::Meta::Attribute::Trait::DMDSLRequired';
+    }
     _plant_attribute(
       $meta,
       $name,
@@ -157,6 +168,9 @@ package DeploymentManagerDSL {
       Moose->throw_error("$name is already declared as a resource, parameter, variable or output")
     }
   }
+}
+package CCfnX::Meta::Attribute::Trait::DMDSLRequired {
+  use Moose::Role;
 }
 package CCfnX::Meta::Attribute::Trait::DMDSLParameter {
   use Moose::Role;
