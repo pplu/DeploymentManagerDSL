@@ -131,6 +131,9 @@ package DeploymentManagerDSL {
 
   sub parameter {
     my ($meta, $name, $type, $properties) = @_;
+
+    _die_if_already_declared_in_class($meta, $name);
+
     $properties = {} if (not defined $properties);
 
     my $r = DeploymentManager::Property->new(
