@@ -24,11 +24,14 @@ package Test1 {
   is_deeply(
     $t->as_hashref,
     {
+      #TODO: as_hashref always outputs an empty hashref if there are no outputs defined in the
+      #      DSL. Maybe this isn't desired at some stage.
+      outputs => [],
       resources => [
         { name => 'r1', type => 'type1', properties => { prop1 => 'r1prop1value' } },
         { name => 'r2', type => 'type2', properties => { prop1 => 'r2prop1value' }, metadata => { dependsOn => [ 'r1' ] } },
       ],
-    }
+    },
   );
 }
 
