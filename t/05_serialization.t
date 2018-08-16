@@ -7,11 +7,11 @@ use Test::More;
 package Test1 {
   use DeploymentManagerDSL;
 
-  resource r1 => 'type1', {
+  resource RawName('r1') => 'type1', {
     prop1 => 'r1prop1value',
   };
 
-  resource r2 => 'type2', {
+  resource RawName('r2') => 'type2', {
     prop1 => 'r2prop1value',
   }, {
     dependsOn => [ 'r1' ],

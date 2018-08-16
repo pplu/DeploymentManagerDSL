@@ -169,12 +169,31 @@ package DeploymentManagerDSL {
   use Moose::Util::MetaRole ();
   use DeploymentManager;
   use boolean ();
+  use Ref::Util qw/is_hashref/;
 
   Moose::Exporter->setup_import_methods(
     with_meta => [qw/parameter resource output true false/],
-    as_is => [qw//],
+    as_is => [qw/RawName Ref Env/],
     also => 'Moose',
   );
+
+  sub RawName {
+    my $name = shift;
+    { name => $name,
+      template => "%s",
+    }
+  }
+
+  sub Ref {
+    my ($ref, $path) = @_;
+    die "Ref must have two parameters" if (not defined $path);
+    return qq|\$(ref.$ref.$path)|;
+  }
+
+  sub Env {
+    my $env = shift;
+    qq|{{ env["$env"] }}|
+  }
 
   sub init_meta {
     shift;
@@ -219,18 +238,34 @@ package DeploymentManagerDSL {
     die "Must specify a name for a resource NAME => 'TYPE', { property1 => '...' }[, { base_property1 => '...' }];" if (not defined $name);
     die "Must specify a type for a resource NAME => 'TYPE', { property1 => '...' }[, { base_property1 => '...' }];" if (not defined $type);
 
-    _die_if_already_declared_in_class($meta, $name);
+    my $name_data;
+    if (is_hashref($name)) {
+      $name_data = $name;
+    } else {
+      $name_data = {
+        name => $name,
+        template => "%s-" . Env('deployment')
+      }
+    }
+
+    die "Can't create a resource without a name" if (not defined $name_data->{ name });
+    die "Can't create a resource without a template" if (not defined $name_data->{ template });
+    die "Name templates have to have a %s in them" if ($name_data->{ template } !~ m/\%s/);
+
+    $name_data->{ final_name } = sprintf($name_data->{ template }, $name_data->{ name });
+
+    _die_if_already_declared_in_class($meta, $name_data->{ name });
 
     my $r = DeploymentManager::Resource->from_hashref({
       type => $type,
-      name => $name,
+      name => $name_data->{ final_name },
       (defined $properties) ? (properties => $properties) : (),
       (defined $base_properties) ? (metadata => $base_properties) : (),
     });
 
     _plant_attribute(
       $meta,
-      $name,
+      $name_data->{ name },
       'DeploymentManager::Resource',
       'CCfnX::Meta::Attribute::Trait::DeploymentManagerResource',
       sub { $r }
