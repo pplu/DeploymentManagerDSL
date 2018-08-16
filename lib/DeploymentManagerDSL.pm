@@ -69,24 +69,24 @@ package DeploymentManagerDSL::Object {
 
     die "Can't generate a config yaml if property_values isn't set" if (not defined $self->property_values);
 
-    return DeploymentManager::Config->new(
-      imports => [ DeploymentManager::Import->new(path => $self->jinja_path_relative) ],
+    return DeploymentManager::Config->from_hashref({
+      imports => [ { path => $self->jinja_path_relative } ],
       resources => [
-        DeploymentManager::Resource->new(
+        {
           name => 'deployment',
           type => $self->jinja_path_relative,
           properties => $self->property_values,
-        ),
+        },
       ],
       outputs => [
         map { 
-          DeploymentManager::Output->new(
+          {
             name => $_->name,
             value => $_->value,
-          );   
+          }
         } @{ $self->object_model->outputs }
       ],
-    );
+    });
   }
 
   sub build_om {
@@ -221,12 +221,12 @@ package DeploymentManagerDSL {
 
     _die_if_already_declared_in_class($meta, $name);
 
-    my $r = DeploymentManager::Resource->new(
+    my $r = DeploymentManager::Resource->from_hashref({
       type => $type,
       name => $name,
       (defined $properties) ? (properties => $properties) : (),
       (defined $base_properties) ? (metadata => $base_properties) : (),
-    );
+    });
 
     _plant_attribute(
       $meta,
@@ -242,10 +242,10 @@ package DeploymentManagerDSL {
 
     _die_if_already_declared_in_class($meta, $name);
 
-    my $r = DeploymentManager::Output->new(
+    my $r = DeploymentManager::Output->from_hashref({
       name => $name,
       value => $value,
-    );
+    });
 
     _plant_attribute(
       $meta,
